@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Browse Projects — DevMarket Kenya{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-12">
+
+  <div class="mb-10">
+    <p class="text-xs font-semibold text-brand-400 uppercase tracking-widest mb-2">Open projects</p>
+    <h1 class="text-3xl font-bold text-white">Find your next project</h1>
+    <p class="text-gray-400 text-sm mt-2">{{ total }} project{{ total|pluralize }} open for bids</p>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-8">
+
+    <aside class="w-full lg:w-64 shrink-0">
+      <form method="GET" action="{% url "browse_projects" %}">
+        <div class="bg-dark-800 border border-dark-600 rounded-xl p-5 space-y-6 sticky top-24">
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Search</label>
+            <div class="relative">
+              <input type="text" name="q" value="{{ search }}"
+                placeholder="Skill, keyword..."
+                class="w-full bg-dark-700 border border-dark-600 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-500">
+              <svg class="w-4 h-4 text-gray-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Category</label>
+            <div class="space-y-1">
+              <label class="flex items-center gap-2 cursor-pointer py-1">
+                <input type="radio" name="category" value="" {% if not category %}checked{% endif %}
+                  class="text-brand-500 bg-dark-700 border-dark-500">
+                <span class="text-sm text-gray-300">All categories</span>
+              </label>
+              {% for val, label in categories %}
+              <label class="flex items-center gap-2 cursor-pointer py-1">
+                <input type="radio" name="category" value="{{ val }}" {% if category == val %}checked{% endif %}
+                  class="text-brand-500 bg-dark-700 border-dark-500">
+                <span class="text-sm text-gray-300">{{ label }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Budget (KES)</label>
+            <div class="space-y-1">
+              {% for val, label in budget_options %}
+              <label class="flex items-center gap-2 cursor-pointer py-1">
+                <input type="radio" name="budget" value="{{ val }}" {% if budget == val %}checked{% endif %}
+                  class="text-brand-500 bg-dark-700 border-dark-500">
+                <span class="text-sm text-gray-300">{{ label }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <button type="submit"
+            class="w-full bg-brand-500 hover:bg-brand-600 text-white py-2 rounded-lg text-sm font-semibold transition-colors">
+            Apply filters
+          </button>
+
+          {% if search or category or budget %}
+          <a href="{% url "browse_projects" %}"
+            class="block text-center text-xs text-gray-500 hover:text-gray-300 transition-colors">
+            Clear all filters
+          </a>
+          {% endif %}
+        </div>
+      </form>
+    </aside>
+
+    <div class="flex-1 min-w-0">
+      {% if projects %}
+      <div class="space-y-4">
+        {% for project in projects %}
+        <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 hover:border-brand-500/40 transition-all group">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-2">
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-dark-700 border border-dark-500 text-gray-400">
+                  {{ project.get_category_display }}
+                </span>
+                {% if project.is_remote %}
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400">Remote</span>
+                {% endif %}
+              </div>
+              <a href="{% url "project_detail" project.pk %}"
+                class="text-lg font-bold text-white group-hover:text-brand-400 transition-colors block">
+                {{ project.title }}
+              </a>
+              <p class="text-sm text-gray-400 mt-2 line-clamp-2">{{ project.description|truncatechars:180 }}</p>
+            </div>
+            <div class="shrink-0 text-right">
+              <p class="text-brand-400 font-bold text-lg whitespace-nowrap">
+                KES {{ project.budget_min|floatformat:0 }} – {{ project.budget_max|floatformat:0 }}
+              </p>
+              {% if project.deadline %}
+              <p class="text-xs text-gray-500 mt-1">Due {{ project.deadline }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if project.skills_required.all %}
+          <div class="flex flex-wrap gap-2 mb-4">
+            {% for skill in project.skills_required.all|slice:":6" %}
+            <span class="text-xs px-2.5 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 font-medium">
+              {{ skill.name }}
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="flex items-center justify-between pt-4 border-t border-dark-700">
+            <div class="flex items-center gap-4 text-xs text-gray-500">
+              <span class="flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                {{ project.bid_count }} bid{{ project.bid_count|pluralize }}
+              </span>
+              <span class="flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {{ project.created_at|timesince }} ago
+              </span>
+              <span>by {{ project.client.company_name|default:project.client.user.get_full_name }}</span>
+            </div>
+            <a href="{% url "project_detail" project.pk %}"
+              class="text-sm font-bold text-brand-400 hover:text-brand-300 transition-colors">
+              View &amp; Bid &rarr;
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="bg-dark-800 border border-dashed border-dark-600 rounded-xl py-20 text-center">
+        <div class="w-14 h-14 bg-dark-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        <p class="text-gray-400 font-medium">No projects found</p>
+        <p class="text-gray-600 text-sm mt-1">Try adjusting your filters</p>
+        <a href="{% url "browse_projects" %}" class="mt-4 inline-block text-brand-400 text-sm font-semibold hover:text-brand-300">Clear filters &rarr;</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
