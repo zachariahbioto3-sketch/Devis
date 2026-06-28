@@ -1,2 +1,134 @@
-{% extends 'base.html' %}
-{% block content %}<h1>Register</h1>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Create Account — DevMarket{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 pt-28 pb-16">
+  <div class="w-full max-w-md">
+
+    <div class="mb-10 text-center">
+      <span class="accent-label justify-center mb-4">Join DevMarket</span>
+      <h1 class="text-4xl text-title font-normal mt-2">Create your account</h1>
+      <p class="text-gray-400 text-sm mt-3">Already have one?
+        <a href="{% url 'login' %}" class="text-brand-500 hover:underline">Sign in</a>
+      </p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-8" id="role-picker">
+      <button type="button" onclick="selectRole('client')" id="btn-client"
+        class="role-btn group flex flex-col items-center gap-3 p-5 border border-dark-600 rounded-xl transition-all duration-200 hover:border-brand-500">
+        <svg class="w-8 h-8 text-gray-400 group-hover:text-brand-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6a4 4 0 11-8 0 4 4 0 018 0zm-8 8a9 9 0 1118 0H6z"/>
+        </svg>
+        <div class="text-center">
+          <p class="font-semibold text-white text-sm">I'm a Client</p>
+          <p class="text-xs text-gray-500 mt-1">I need a developer</p>
+        </div>
+      </button>
+
+      <button type="button" onclick="selectRole('developer')" id="btn-developer"
+        class="role-btn group flex flex-col items-center gap-3 p-5 border border-dark-600 rounded-xl transition-all duration-200 hover:border-brand-500">
+        <svg class="w-8 h-8 text-gray-400 group-hover:text-brand-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+        </svg>
+        <div class="text-center">
+          <p class="font-semibold text-white text-sm">I'm a Developer</p>
+          <p class="text-xs text-gray-500 mt-1">I want to find work</p>
+        </div>
+      </button>
+    </div>
+
+    <form method="POST" id="register-form" class="space-y-5" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="role" id="role-input" value="{{ form_data.role|default:'' }}">
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Username</label>
+        <input type="text" name="username" required autocomplete="username"
+          value="{{ form_data.username|default:'' }}" placeholder="yourhandle"
+          class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-brand-500 transition-colors text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Email</label>
+        <input type="email" name="email" required autocomplete="email"
+          value="{{ form_data.email|default:'' }}" placeholder="you@example.com"
+          class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-brand-500 transition-colors text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Password</label>
+        <div class="relative">
+          <input type="password" name="password1" required id="pw1" autocomplete="new-password"
+            placeholder="Min 8 characters"
+            class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-brand-500 transition-colors text-sm pr-10">
+          <button type="button" onclick="togglePw('pw1')" class="absolute right-3 top-3 text-gray-500 hover:text-brand-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Confirm Password</label>
+        <div class="relative">
+          <input type="password" name="password2" required id="pw2" autocomplete="new-password"
+            placeholder="Repeat password"
+            class="w-full bg-dark-800 border border-dark-600 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-brand-500 transition-colors text-sm pr-10">
+          <button type="button" onclick="togglePw('pw2')" class="absolute right-3 top-3 text-gray-500 hover:text-brand-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <p id="role-error" class="hidden text-red-400 text-xs text-center">Please select a role above before continuing.</p>
+
+      <button type="submit"
+        class="w-full bg-brand-500 hover:bg-brand-600 text-dark-900 font-bold py-3 rounded-lg transition-colors text-sm uppercase tracking-widest mt-2">
+        Create Account
+      </button>
+    </form>
+    <!-- Google Sign In -->
+ 
+
+    <p class="text-center text-xs text-gray-600 mt-6">
+      By registering you agree to our
+      <a href="#" class="text-gray-400 hover:text-white">Terms</a> &amp;
+      <a href="#" class="text-gray-400 hover:text-white">Privacy Policy</a>.
+    </p>
+  </div>
+</div>
+
+<style>
+  .role-btn.selected { border-color: #FBD784; background-color: rgba(251,215,132,0.07); }
+  .role-btn.selected svg { color: #FBD784; }
+</style>
+<script>
+  const savedRole = "{{ form_data.role|default:'' }}";
+  if (savedRole) selectRole(savedRole);
+
+  function selectRole(role) {
+    document.getElementById('role-input').value = role;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('btn-' + role).classList.add('selected');
+    document.getElementById('role-error').classList.add('hidden');
+  }
+
+  document.getElementById('register-form').addEventListener('submit', function(e) {
+    if (!document.getElementById('role-input').value) {
+      e.preventDefault();
+      document.getElementById('role-error').classList.remove('hidden');
+      document.getElementById('role-picker').scrollIntoView({behavior:'smooth'});
+    }
+  });
+
+  function togglePw(id) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+</script>
+{% endblock %}

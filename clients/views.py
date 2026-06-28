@@ -1,54 +1,98 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Sum, Q
+from projects.models import Project, Bid
+from contracts.models import Contract, Milestone
+from clients.models import ClientProfile
+
+
+def get_or_create_profile(user):
+    profile, _ = ClientProfile.objects.get_or_create(user=user)
+    return profile
+
 
 @login_required
 def dashboard(request):
-    return render(request, "clients/dashboard.html")
+    profile = get_or_create_profile(request.user)
+
+    projects      = Project.objects.filter(client=profile).order_by('-created_at')
+    open_projects = projects.filter(status='open')
+    active        = projects.filter(status='in_progress')
+    completed     = projects.filter(status='completed')
+
+    total_bids    = Bid.objects.filter(project__client=profile, status='pending').count()
+    active_contracts = Contract.objects.filter(
+        project__client=profile, status='active'
+    ).select_related('project', 'bid__developer__user')
+
+    pending_milestones = Milestone.objects.filter(
+        contract__project__client=profile, status='submitted'
+    ).select_related('contract__project')[:5]
+
+    total_spent = Contract.objects.filter(
+        project__client=profile, status='completed'
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+
+    recent_projects = projects[:5]
+
+    ctx = {
+        'profile':             profile,
+        'open_count':          open_projects.count(),
+        'active_count':        active.count(),
+        'completed_count':     completed.count(),
+        'total_bids':          total_bids,
+        'active_contracts':    active_contracts,
+        'pending_milestones':  pending_milestones,
+        'total_spent':         total_spent,
+        'recent_projects':     recent_projects,
+    }
+    return render(request, 'clients/dashboard.html', ctx)
+
 
 @login_required
 def profile(request):
-    return render(request, "clients/profile.html")
+    return render(request, 'clients/profile.html')
 
 @login_required
 def my_projects(request):
-    return render(request, "clients/projects.html")
+    return render(request, 'clients/projects.html')
 
 @login_required
 def post_project(request):
-    return render(request, "clients/post_project.html")
+    return render(request, 'clients/post_project.html')
 
 @login_required
 def project_detail(request, pk):
-    return render(request, "clients/project_detail.html")
+    return render(request, 'clients/project_detail.html')
 
 @login_required
 def view_bids(request, pk):
-    return render(request, "clients/view_bids.html")
+    return render(request, 'clients/view_bids.html')
 
 @login_required
 def accept_bid(request, pk):
-    return render(request, "clients/accept_bid.html")
+    return render(request, 'clients/accept_bid.html')
 
 @login_required
 def reject_bid(request, pk):
-    return render(request, "clients/reject_bid.html")
+    return render(request, 'clients/reject_bid.html')
 
 @login_required
 def my_contracts(request):
-    return render(request, "clients/contracts.html")
+    return render(request, 'clients/contracts.html')
 
 @login_required
 def contract_detail(request, pk):
-    return render(request, "clients/contract_detail.html")
+    return render(request, 'clients/contract_detail.html')
 
 @login_required
 def approve_milestone(request, pk):
-    return render(request, "clients/approve_milestone.html")
+    return render(request, 'clients/approve_milestone.html')
 
 @login_required
 def payments(request):
-    return render(request, "clients/payments.html")
+    return render(request, 'clients/payments.html')
 
 @login_required
 def leave_review(request, contract_pk):
-    return render(request, "clients/leave_review.html")
+    return render(request, 'clients/leave_review.html')

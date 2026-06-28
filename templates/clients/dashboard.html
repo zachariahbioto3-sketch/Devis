@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block title %}Client Dashboard — DevMarket{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Hide the landing page nav & sidebars on dashboard */
+  nav.absolute, 
+  div.fixed.left-8, 
+  div.fixed.right-8 { display: none !important; }
+
+  /* Premium Stat Card Hover */
+  .stat-card { transition: all 0.3s ease; }
+  .stat-card:hover { 
+      transform: translateY(-4px); 
+      border-color: rgba(251,215,132,0.4); /* brand-500 */
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+  }
+
+  .badge-open      { background:rgba(59,130,246,0.15);  color:#93c5fd;  border:1px solid rgba(59,130,246,0.3); }
+  .badge-progress  { background:rgba(251,215,132,0.12); color:#FBD784;  border:1px solid rgba(251,215,132,0.3); }
+  .badge-completed { background:rgba(34,197,94,0.12);   color:#86efac;  border:1px solid rgba(34,197,94,0.3); }
+  .badge-submitted { background:rgba(168,85,247,0.12);  color:#d8b4fe;  border:1px solid rgba(168,85,247,0.3); }
+  .badge-cancelled { background:rgba(239,68,68,0.12);   color:#fca5a5;  border:1px solid rgba(239,68,68,0.3); }
+
+  /* Sidebar Links */
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #9ca3af;
+    transition: all 0.2s ease;
+  }
+  .sidebar-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+  .sidebar-link.active { background: rgba(251,215,132,0.1); color: #FBD784; }
+  .sidebar-link.active svg { color: #FBD784; }
+  .sidebar-link svg { width:1.25rem; height:1.25rem; flex-shrink:0; color:#6b7280; transition: color 0.2s; }
+  .sidebar-link:hover svg { color: #fff; }
+
+  .sidebar-section {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #4b5563;
+    padding: 0 1rem;
+    margin: 2rem 0 0.75rem;
+  }
+
+  /* Mobile sidebar toggle */
+  #sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  @media (max-width: 1024px) {
+    #sidebar { transform: translateX(-100%); position: fixed; z-index: 50; height: 100vh; }
+    #sidebar.open { transform: translateX(0); }
+    #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(11,29,38,0.8); backdrop-filter: blur(4px); z-index: 40; }
+    #sidebar-overlay.open { display: block; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen bg-dark-900">
+
+  <!-- ── Sidebar Overlay (mobile) ───────────────────────────────────────── -->
+  <div id="sidebar-overlay" onclick="toggleSidebar()" class="transition-opacity"></div>
+
+  <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+  <aside id="sidebar"
+    class="w-64 bg-dark-800/95 backdrop-blur-md border-r border-dark-700 flex flex-col shrink-0 relative z-50">
+
+    <!-- Logo -->
+    <div class="px-6 py-6 border-b border-dark-700/50">
+      <a href="{% url 'home' %}" class="flex items-center gap-2">
+        <span class="font-bold text-2xl tracking-wider text-title text-white">
+          DevMarket<span class="text-brand-500 text-sm font-sans ml-1">.ke</span>
+        </span>
+      </a>
+      <p class="text-xs font-bold tracking-widest uppercase text-brand-500 mt-2">Client Portal</p>
+    </div>
+
+    <!-- User pill -->
+    <div class="px-4 py-5 border-b border-dark-700/50">
+      <div class="flex items-center gap-3 bg-dark-900/50 border border-dark-600/50 rounded-xl px-3 py-3">
+        <div class="w-9 h-9 rounded-full bg-brand-500/10 border border-brand-500/30 flex items-center justify-center shrink-0">
+          <span class="text-brand-500 text-sm font-bold text-title">
+            {{ request.user.username|slice:":1"|upper }}
+          </span>
+        </div>
+        <div class="min-w-0">
+          <p class="text-white text-sm font-bold truncate">{{ request.user.username }}</p>
+          <p class="text-gray-400 text-xs truncate font-medium">{{ request.user.email }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 overflow-y-auto custom-scrollbar">
+
+      <p class="sidebar-section">Main</p>
+      <a href="{% url 'client_dashboard' %}" class="sidebar-link active">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Overview
+      </a>
+
+      <p class="sidebar-section">Projects</p>
+      <a href="{% url 'client_projects' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        My Projects
+        {% if open_count %}<span class="ml-auto text-xs bg-dark-600 text-gray-300 font-bold px-2 py-0.5 rounded-full">{{ open_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'post_project' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Post a Project
+      </a>
+
+      <p class="sidebar-section">Work</p>
+      <a href="{% url 'client_contracts' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Contracts
+        {% if active_count %}<span class="ml-auto text-xs bg-brand-500/20 text-brand-500 font-bold px-2 py-0.5 rounded-full">{{ active_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'client_payments' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        Payments
+      </a>
+
+      <p class="sidebar-section">Account</p>
+      <a href="{% url 'client_profile' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        Profile
+      </a>
+      <a href="{% url 'home' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+        Browse Developers
+      </a>
+    </nav>
+
+    <!-- Logout -->
+    <div class="px-3 py-4 border-t border-dark-700/50">
+      <a href="{% url 'logout' %}" class="sidebar-link text-red-400/80 hover:text-red-400 hover:bg-red-500/10">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Main Area ───────────────────────────────────────────────────────── -->
+  <div class="flex-1 flex flex-col min-w-0 relative">
+
+    <!-- Top bar -->
+    <header class="h-20 border-b border-dark-700/50 flex items-center justify-between px-8 shrink-0 bg-dark-900/80 backdrop-blur-md sticky top-0 z-30">
+      <!-- Mobile hamburger -->
+      <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-brand-500 transition-colors">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
+      <div class="hidden lg:block">
+        <h1 class="text-sm font-bold tracking-widest uppercase text-white">Overview</h1>
+        <p class="text-xs text-brand-500 font-medium mt-1">Welcome back, {{ request.user.username }}</p>
+      </div>
+
+      <!-- Right: notification bell + post project -->
+      <div class="flex items-center gap-4 ml-auto">
+        {% if total_bids %}
+        <div class="relative">
+          <button class="w-10 h-10 rounded-xl bg-dark-800 border border-dark-600 flex items-center justify-center text-gray-400 hover:text-brand-500 hover:border-brand-500/50 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          </button>
+          <span class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-brand-500 text-dark-900 text-xs font-bold rounded-full flex items-center justify-center border-2 border-dark-900">{{ total_bids }}</span>
+        </div>
+        {% endif %}
+        <a href="{% url 'post_project' %}"
+          class="hidden sm:inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-400 text-dark-900 font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg shadow-brand-500/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Post Project
+        </a>
+      </div>
+    </header>
+
+    <!-- Scrollable content -->
+    <main class="flex-1 overflow-y-auto p-6 lg:p-12 space-y-12">
+
+      <!-- Page heading -->
+      <div>
+        <span class="accent-label mb-4">Client Dashboard</span>
+        <h2 class="text-4xl md:text-5xl text-title font-normal mt-2 leading-tight">
+          Good to see you, <br class="hidden sm:block"><span class="text-brand-500">{{ request.user.username }}</span>
+        </h2>
+        {% if profile.company_name %}
+        <p class="text-gray-400 text-sm mt-4 font-medium tracking-wide">{{ profile.company_name }} &mdash; {{ profile.location }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-6">
+        
+        <div class="stat-card bg-dark-800/80 border border-dark-600/50 rounded-2xl p-6 relative overflow-hidden group">
+          <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors pointer-events-none"></div>
+          <div class="flex items-center justify-between mb-6 relative z-10">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Open Projects</p>
+            <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+              <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+          </div>
+          <p class="text-4xl lg:text-5xl font-normal text-title text-white relative z-10">{{ open_count }}</p>
+          <p class="text-sm font-medium text-gray-400 mt-2 relative z-10">Awaiting bids</p>
+        </div>
+
+        <div class="stat-card bg-dark-800/80 border border-dark-600/50 rounded-2xl p-6 relative overflow-hidden group">
+          <div class="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors pointer-events-none"></div>
+          <div class="flex items-center justify-between mb-6 relative z-10">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Active Work</p>
+            <div class="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/20">
+              <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+          </div>
+          <p class="text-4xl lg:text-5xl font-normal text-title text-brand-500 relative z-10">{{ active_count }}</p>
+          <p class="text-sm font-medium text-gray-400 mt-2 relative z-10">In progress</p>
+        </div>
+
+        <div class="stat-card bg-dark-800/80 border border-dark-600/50 rounded-2xl p-6 relative overflow-hidden group">
+          <div class="absolute -right-6 -top-6 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors pointer-events-none"></div>
+          <div class="flex items-center justify-between mb-6 relative z-10">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Pending Bids</p>
+            <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+              <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            </div>
+          </div>
+          <p class="text-4xl lg:text-5xl font-normal text-title text-white relative z-10">{{ total_bids }}</p>
+          <p class="text-sm font-medium text-gray-400 mt-2 relative z-10">Needs review</p>
+        </div>
+
+        <div class="stat-card bg-dark-800/80 border border-dark-600/50 rounded-2xl p-6 relative overflow-hidden group">
+          <div class="absolute -right-6 -top-6 w-24 h-24 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors pointer-events-none"></div>
+          <div class="flex items-center justify-between mb-6 relative z-10">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Total Spent</p>
+            <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
+              <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl lg:text-4xl font-normal text-title text-white relative z-10"><span class="text-lg text-gray-500 font-sans tracking-widest mr-1">KES</span>{{ total_spent|floatformat:0 }}</p>
+          <p class="text-sm font-medium text-gray-400 mt-2 relative z-10">{{ completed_count }} completed</p>
+        </div>
+      </div>
+
+      <!-- Action Required: Pending Milestones -->
+      {% if pending_milestones %}
+      <div class="bg-brand-500/5 border border-brand-500/20 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="w-2.5 h-2.5 rounded-full bg-brand-500 animate-pulse shadow-[0_0_10px_rgba(251,215,132,0.8)]"></span>
+          <h3 class="text-sm font-bold uppercase tracking-widest text-brand-500">Action Required</h3>
+        </div>
+        <div class="space-y-3">
+          {% for milestone in pending_milestones %}
+          <div class="bg-dark-900/80 border border-brand-500/30 rounded-xl px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-brand-500/60 transition-colors">
+            <div class="flex items-center gap-4">
+              <div class="w-1.5 h-12 rounded-full bg-brand-500 shrink-0 hidden sm:block"></div>
+              <div>
+                <p class="font-bold text-white text-base tracking-wide">{{ milestone.title }}</p>
+                <p class="text-sm text-gray-400 mt-1 font-medium">{{ milestone.contract.project.title }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-5 shrink-0">
+              <span class="text-brand-500 font-normal text-title text-xl">KES {{ milestone.amount|floatformat:0 }}</span>
+              <a href="{% url 'client_contract_detail' milestone.contract.pk %}"
+                class="text-xs font-bold uppercase tracking-widest bg-brand-500 hover:bg-brand-400 text-dark-900 px-5 py-2.5 rounded-lg transition-colors">
+                Review
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Two column: Active Contracts + Recent Projects -->
+      <div class="grid lg:grid-cols-2 gap-10 lg:gap-12 pt-4">
+
+        <!-- Active Contracts -->
+        <div>
+          <div class="flex items-center justify-between mb-8 border-b border-dark-700/50 pb-4">
+            <h3 class="text-2xl text-title font-normal text-white">Active Contracts</h3>
+            <a href="{% url 'client_contracts' %}" class="text-xs font-bold uppercase tracking-widest text-brand-500 hover:text-brand-400 transition-colors">View all →</a>
+          </div>
+          
+          {% if active_contracts %}
+          <div class="space-y-4">
+            {% for contract in active_contracts %}
+            <div class="bg-dark-800/60 border border-dark-600/50 rounded-2xl p-6 hover:border-brand-500/40 hover:bg-dark-800/90 transition-all group">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <p class="font-bold text-white text-base tracking-wide">{{ contract.project.title }}</p>
+                  <p class="text-sm text-gray-400 font-medium mt-1">
+                    with <span class="text-gray-300">{% if contract.bid %}{{ contract.bid.developer.user.get_full_name|default:contract.bid.developer.user.username }}{% else %}Developer{% endif %}</span>
+                  </p>
+                </div>
+                <span class="badge-progress text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Active</span>
+              </div>
+              
+              {% with milestones=contract.milestones.all %}
+              {% if milestones %}
+              <div class="flex gap-1.5 mb-5">
+                {% for m in milestones %}
+                <div class="flex-1 h-1.5 rounded-full
+                  {% if m.status == 'paid' or m.status == 'approved' %}bg-brand-500 shadow-[0_0_8px_rgba(251,215,132,0.4)]
+                  {% elif m.status == 'submitted' %}bg-purple-400
+                  {% elif m.status == 'in_progress' %}bg-blue-400
+                  {% else %}bg-dark-600/80{% endif %}"></div>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% endwith %}
+              
+              <div class="flex items-center justify-between pt-2">
+                <span class="text-brand-500 font-normal text-title text-xl">KES {{ contract.total_amount|floatformat:0 }}</span>
+                <a href="{% url 'client_contract_detail' contract.pk %}" class="text-sm text-gray-400 hover:text-brand-500 font-bold transition-colors">Details &rarr;</a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="bg-dark-800/40 border border-dashed border-dark-600 rounded-2xl p-10 text-center">
+            <div class="w-12 h-12 bg-dark-700 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <p class="text-gray-400 text-sm font-medium">No active contracts right now.</p>
+            <a href="{% url 'client_projects' %}" class="text-brand-500 text-sm font-bold mt-4 inline-block hover:text-brand-400 transition-colors">View your projects &rarr;</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Recent Projects -->
+        <div>
+          <div class="flex items-center justify-between mb-8 border-b border-dark-700/50 pb-4">
+            <h3 class="text-2xl text-title font-normal text-white">Recent Projects</h3>
+            <a href="{% url 'client_projects' %}" class="text-xs font-bold uppercase tracking-widest text-brand-500 hover:text-brand-400 transition-colors">View all →</a>
+          </div>
+          
+          {% if recent_projects %}
+          <div class="space-y-4">
+            {% for project in recent_projects %}
+            <div class="bg-dark-800/60 border border-dark-600/50 rounded-2xl px-6 py-5 flex items-center justify-between gap-4 hover:border-brand-500/40 hover:bg-dark-800/90 transition-all group">
+              <div class="flex items-center gap-4 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-dark-700 border border-dark-600 flex items-center justify-center shrink-0 group-hover:border-brand-500/30 transition-colors">
+                  <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="font-bold text-white text-base truncate tracking-wide">{{ project.title }}</p>
+                  <p class="text-sm text-gray-400 font-medium mt-1">{{ project.bids.count }} bid{{ project.bids.count|pluralize }} &middot; KES {{ project.budget_min|floatformat:0 }}–{{ project.budget_max|floatformat:0 }}</p>
+                </div>
+              </div>
+              <div class="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0">
+                <span class="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider
+                  {% if project.status == 'open' %}badge-open
+                  {% elif project.status == 'in_progress' %}badge-progress
+                  {% elif project.status == 'completed' %}badge-completed
+                  {% else %}badge-cancelled{% endif %}">
+                  {{ project.get_status_display }}
+                </span>
+                <a href="{% if project.status == 'open' and project.bids.count > 0 %}{% url 'view_bids' project.pk %}{% else %}{% url 'client_project_detail' project.pk %}{% endif %}"
+                  class="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-gray-400 hover:text-dark-900 hover:bg-brand-500 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="bg-dark-800/40 border border-dashed border-dark-600 rounded-2xl p-10 text-center">
+            <div class="w-12 h-12 bg-dark-700 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>
+            </div>
+            <p class="text-gray-400 text-sm font-medium mb-4">No projects posted yet.</p>
+            <a href="{% url 'post_project' %}"
+              class="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-400 text-dark-900 font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-widest transition-colors">
+              Post First Project
+            </a>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+  }
+</script>
+{% endblock %}

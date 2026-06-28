@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+{% block title %}Developer Dashboard — DevMarket{% endblock %}
+
+{% block extra_head %}
+<style>
+  nav.absolute,
+  div.fixed.left-8,
+  div.fixed.right-8 { display: none !important; }
+
+  .stat-card { transition: transform 0.2s ease, border-color 0.2s ease; }
+  .stat-card:hover { transform: translateY(-3px); border-color: rgba(251,215,132,0.35); }
+
+  .badge-pending   { background:rgba(251,215,132,0.12); color:#FBD784;  border:1px solid rgba(251,215,132,0.3); }
+  .badge-accepted  { background:rgba(34,197,94,0.12);   color:#86efac;  border:1px solid rgba(34,197,94,0.3); }
+  .badge-rejected  { background:rgba(239,68,68,0.12);   color:#fca5a5;  border:1px solid rgba(239,68,68,0.3); }
+  .badge-active    { background:rgba(59,130,246,0.15);  color:#93c5fd;  border:1px solid rgba(59,130,246,0.3); }
+  .badge-completed { background:rgba(34,197,94,0.12);   color:#86efac;  border:1px solid rgba(34,197,94,0.3); }
+
+  .skill-pill { background:rgba(251,215,132,0.08); border:1px solid rgba(251,215,132,0.2); color:#FBD784; }
+  .skill-pill.intermediate { background:rgba(59,130,246,0.08); border-color:rgba(59,130,246,0.2); color:#93c5fd; }
+  .skill-pill.beginner { background:rgba(156,163,175,0.08); border-color:rgba(156,163,175,0.2); color:#9ca3af; }
+
+  .sidebar-link {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.65rem 1rem; border-radius: 0.5rem;
+    font-size: 0.875rem; font-weight: 600; color: #9ca3af;
+    transition: all 0.15s ease;
+  }
+  .sidebar-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+  .sidebar-link.active { background: rgba(251,215,132,0.1); color: #FBD784; }
+  .sidebar-link svg { width:1.1rem; height:1.1rem; flex-shrink:0; color:#6b7280; transition:color 0.15s; }
+  .sidebar-link:hover svg, .sidebar-link.active svg { color: #FBD784; }
+  .sidebar-section {
+    font-size:0.65rem; font-weight:700; letter-spacing:0.15em;
+    text-transform:uppercase; color:#4b5563; padding:0 1rem; margin:1.5rem 0 0.5rem;
+  }
+
+  #sidebar { transition: transform 0.25s ease; }
+  @media (max-width: 1024px) {
+    #sidebar { transform: translateX(-100%); position:fixed; z-index:50; height:100vh; }
+    #sidebar.open { transform: translateX(0); }
+    #sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:40; }
+    #sidebar-overlay.open { display:block; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen bg-dark-900">
+
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
+  <aside id="sidebar" class="w-64 bg-dark-800 border-r border-dark-700 flex flex-col shrink-0">
+
+    <!-- Logo -->
+    <div class="px-6 py-5 border-b border-dark-700">
+      <a href="{% url 'home' %}" class="flex items-center gap-2">
+        <span class="font-bold text-xl tracking-wider text-title">
+          DevMarket<span class="text-brand-500 text-xs font-sans ml-1">.ke</span>
+        </span>
+      </a>
+      <p class="text-xs text-gray-600 mt-1">Developer Portal</p>
+    </div>
+
+    <!-- User pill -->
+    <div class="px-4 py-4 border-b border-dark-700">
+      <div class="flex items-center gap-3 bg-dark-700 rounded-xl px-3 py-2.5">
+        <div class="w-8 h-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center shrink-0">
+          <span class="text-brand-500 text-xs font-bold">{{ request.user.username|slice:":1"|upper }}</span>
+        </div>
+        <div class="min-w-0">
+          <p class="text-white text-xs font-semibold truncate">{{ request.user.username }}</p>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            {% if profile.availability == 'available' %}
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+            <span class="text-xs text-green-400">Available</span>
+            {% elif profile.availability == 'busy' %}
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+            <span class="text-xs text-brand-500">Busy</span>
+            {% else %}
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+            <span class="text-xs text-gray-500">Unavailable</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Plan badge -->
+      {% if subscription %}
+      <div class="mt-2 px-3 py-1.5 rounded-lg
+        {% if subscription.plan == 'pro' %}bg-brand-500/10 border border-brand-500/30
+        {% else %}bg-dark-700 border border-dark-600{% endif %}
+        flex items-center justify-between">
+        <span class="text-xs font-bold
+          {% if subscription.plan == 'pro' %}text-brand-500{% else %}text-gray-500{% endif %}">
+          {% if subscription.plan == 'pro' %}⚡ Pro Plan{% else %}Free Plan{% endif %}
+        </span>
+        {% if subscription.plan == 'free' %}
+        <a href="{% url 'dev_subscription' %}" class="text-xs text-brand-500 hover:underline font-semibold">Upgrade</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-3 overflow-y-auto">
+
+      <p class="sidebar-section">Main</p>
+      <a href="{% url 'dev_dashboard' %}" class="sidebar-link active">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Overview
+      </a>
+      <a href="{% url 'browse_projects' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        Browse Projects
+      </a>
+
+      <p class="sidebar-section">My Work</p>
+      <a href="{% url 'dev_bids' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        My Bids
+        {% if pending_bids_count %}<span class="ml-auto text-xs bg-brand-500/20 text-brand-500 px-1.5 py-0.5 rounded-full">{{ pending_bids_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'dev_contracts' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Contracts
+        {% if active_count %}<span class="ml-auto text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full">{{ active_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'dev_earnings' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Earnings
+      </a>
+
+      <p class="sidebar-section">Profile</p>
+      <a href="{% url 'dev_profile' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        My Profile
+      </a>
+      <a href="{% url 'dev_portfolio' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Portfolio
+      </a>
+      <a href="{% url 'dev_skills' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        Skills
+      </a>
+
+      <p class="sidebar-section">Store</p>
+      <a href="{% url 'dev_products' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        My Products
+      </a>
+      <a href="{% url 'dev_subscription' %}" class="sidebar-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+        Subscription
+      </a>
+    </nav>
+
+    <!-- Logout -->
+    <div class="px-3 py-4 border-t border-dark-700">
+      <a href="{% url 'logout' %}" class="sidebar-link text-red-400 hover:text-red-300 hover:bg-red-500/10">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Main Area ─────────────────────────────────────────────────────────── -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- Top bar -->
+    <header class="h-16 bg-dark-800 border-b border-dark-700 flex items-center justify-between px-6 shrink-0">
+      <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <div class="hidden lg:block">
+        <h1 class="text-sm font-semibold text-white">Overview</h1>
+        <p class="text-xs text-gray-500">Developer Dashboard</p>
+      </div>
+      <div class="flex items-center gap-3 ml-auto">
+        {% if pending_bids_count %}
+        <div class="relative">
+          <button class="w-9 h-9 rounded-lg bg-dark-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          </button>
+          <span class="absolute -top-1 -right-1 w-4 h-4 bg-brand-500 text-dark-900 text-xs font-bold rounded-full flex items-center justify-center">{{ pending_bids_count }}</span>
+        </div>
+        {% endif %}
+        <a href="{% url 'browse_projects' %}"
+          class="hidden sm:inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-dark-900 font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-widest transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          Find Projects
+        </a>
+      </div>
+    </header>
+
+    <!-- Scrollable content -->
+    <main class="flex-1 overflow-y-auto p-6 lg:p-10 space-y-10">
+
+      <!-- Page heading -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span class="accent-label mb-1">Developer Dashboard</span>
+          <h2 class="text-3xl text-title font-normal mt-2">
+            Hey, <span class="text-brand-500">{{ request.user.username }}</span>
+          </h2>
+          {% if profile.tagline %}
+          <p class="text-gray-400 text-sm mt-1">{{ profile.tagline }}</p>
+          {% else %}
+          <p class="text-gray-500 text-sm mt-1">
+            {% if profile.hourly_rate %}KES {{ profile.hourly_rate }}/hr &middot; {% endif %}
+            {{ profile.experience_years }} yr{{ profile.experience_years|pluralize }} experience &middot; {{ profile.location }}
+          </p>
+          {% endif %}
+        </div>
+        {% if profile.slug %}
+        <a href="{% url 'dev_public_profile' profile.slug %}"
+          class="inline-flex items-center gap-2 border border-dark-600 hover:border-brand-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors shrink-0">
+          <svg class="w-3.5 h-3.5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          View Public Profile
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+
+        <div class="stat-card bg-dark-800 border border-dark-600 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Total Earned</p>
+            <div class="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+              <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-white">KES {{ total_earned|floatformat:0 }}</p>
+          <p class="text-xs text-gray-500 mt-1">{{ completed_count }} completed</p>
+        </div>
+
+        <div class="stat-card bg-dark-800 border border-dark-600 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Active Contracts</p>
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-brand-500">{{ active_count }}</p>
+          <p class="text-xs text-gray-500 mt-1">In progress</p>
+        </div>
+
+        <div class="stat-card bg-dark-800 border border-dark-600 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Pending Bids</p>
+            <div class="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center">
+              <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-white">{{ pending_bids_count }}</p>
+          <p class="text-xs text-gray-500 mt-1">Awaiting response</p>
+        </div>
+
+        <div class="stat-card bg-dark-800 border border-dark-600 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Total Bids</p>
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+              <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-bold text-white">{{ total_bids }}</p>
+          <p class="text-xs text-gray-500 mt-1">All time</p>
+        </div>
+
+      </div>
+
+      <!-- Action Required: Milestones to submit -->
+      {% if pending_milestones %}
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+          <h3 class="text-sm font-bold uppercase tracking-widest text-brand-500">Action Required</h3>
+        </div>
+        <div class="space-y-2">
+          {% for milestone in pending_milestones %}
+          <div class="bg-dark-800 border border-brand-500/25 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full bg-brand-500 shrink-0"></div>
+              <div>
+                <p class="font-semibold text-white text-sm">{{ milestone.title }}</p>
+                <p class="text-xs text-gray-500 mt-0.5">{{ milestone.contract.project.title }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-brand-500 font-bold text-sm">KES {{ milestone.amount|floatformat:0 }}</span>
+              <a href="{% url 'submit_deliverable' milestone.pk %}"
+                class="text-xs font-bold uppercase tracking-widest bg-brand-500 hover:bg-brand-600 text-dark-900 px-4 py-1.5 rounded-lg transition-colors">
+                Submit
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Two column: Active Contracts + Pending Bids -->
+      <div class="grid lg:grid-cols-2 gap-8">
+
+        <!-- Active Contracts -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white">Active Contracts</h3>
+            <a href="{% url 'dev_contracts' %}" class="text-xs text-brand-500 hover:text-brand-400 font-semibold">View all →</a>
+          </div>
+          {% if active_contracts %}
+          <div class="space-y-3">
+            {% for contract in active_contracts %}
+            <div class="bg-dark-800 border border-dark-600 rounded-xl p-4 hover:border-dark-500 transition-colors">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <p class="font-semibold text-white text-sm">{{ contract.project.title }}</p>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    for {{ contract.project.client.company_name|default:contract.project.client.user.username }}
+                  </p>
+                </div>
+                <span class="badge-active text-xs font-bold px-2 py-0.5 rounded-full">Active</span>
+              </div>
+              {% with milestones=contract.milestones.all %}
+              {% if milestones %}
+              <div class="mb-3">
+                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>Progress</span>
+                  <span>{{ milestones.count }} milestone{{ milestones.count|pluralize }}</span>
+                </div>
+                <div class="flex gap-1">
+                  {% for m in milestones %}
+                  <div class="flex-1 h-1 rounded-full
+                    {% if m.status == 'paid' or m.status == 'approved' %}bg-green-400
+                    {% elif m.status == 'submitted' %}bg-brand-500
+                    {% elif m.status == 'in_progress' %}bg-blue-400
+                    {% else %}bg-dark-600{% endif %}"></div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+              {% endwith %}
+              <div class="flex items-center justify-between">
+                <span class="text-green-400 font-bold text-sm">KES {{ contract.total_amount|floatformat:0 }}</span>
+                <a href="{% url 'dev_contract_detail' contract.pk %}" class="text-xs text-gray-500 hover:text-brand-500 font-semibold transition-colors">Details →</a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="bg-dark-800 border border-dashed border-dark-600 rounded-xl p-8 text-center">
+            <p class="text-gray-600 text-sm">No active contracts.</p>
+            <a href="{% url 'browse_projects' %}" class="text-brand-500 text-xs font-semibold mt-2 inline-block">Browse projects →</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Pending Bids -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white">Pending Bids</h3>
+            <a href="{% url 'dev_bids' %}" class="text-xs text-brand-500 hover:text-brand-400 font-semibold">View all →</a>
+          </div>
+          {% if pending_bids %}
+          <div class="space-y-3">
+            {% for bid in pending_bids %}
+            <div class="bg-dark-800 border border-dark-600 rounded-xl px-4 py-3.5 flex items-center justify-between gap-3 hover:border-dark-500 transition-colors">
+              <div class="min-w-0">
+                <p class="font-semibold text-white text-sm truncate">{{ bid.project.title }}</p>
+                <p class="text-xs text-gray-500 mt-0.5">
+                  KES {{ bid.amount|floatformat:0 }} &middot; {{ bid.timeline_days }} day{{ bid.timeline_days|pluralize }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="badge-pending text-xs font-bold px-2 py-0.5 rounded-full">Pending</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="bg-dark-800 border border-dashed border-dark-600 rounded-xl p-8 text-center">
+            <p class="text-gray-600 text-sm mb-3">No pending bids.</p>
+            <a href="{% url 'browse_projects' %}"
+              class="inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-dark-900 font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-widest transition-colors">
+              Find Projects
+            </a>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Skills + Profile completeness -->
+      <div class="grid lg:grid-cols-2 gap-8">
+
+        <!-- Skills -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white">Your Skills</h3>
+            <a href="{% url 'dev_skills' %}" class="text-xs text-brand-500 hover:text-brand-400 font-semibold">Manage →</a>
+          </div>
+          <div class="bg-dark-800 border border-dark-600 rounded-xl p-5">
+            {% if skills %}
+            <div class="flex flex-wrap gap-2">
+              {% for ds in skills %}
+              <span class="skill-pill {{ ds.level }} text-xs font-semibold px-3 py-1 rounded-full">
+                {{ ds.skill.name }}
+                <span class="opacity-60 ml-1">{{ ds.level }}</span>
+              </span>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-600 text-sm text-center py-4">No skills added yet.</p>
+            {% endif %}
+            <a href="{% url 'dev_skills' %}" class="mt-4 flex items-center gap-2 text-xs text-gray-500 hover:text-brand-500 font-semibold transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Add more skills
+            </a>
+          </div>
+        </div>
+
+        <!-- Profile completeness -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-white">Profile Strength</h3>
+            <a href="{% url 'dev_profile' %}" class="text-xs text-brand-500 hover:text-brand-400 font-semibold">Edit →</a>
+          </div>
+          <div class="bg-dark-800 border border-dark-600 rounded-xl p-5 space-y-3">
+            {% with items=0 %}
+            <!-- Each row: check + label -->
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 {% if profile.bio %}bg-green-500/20{% else %}bg-dark-700{% endif %}">
+                {% if profile.bio %}
+                <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                {% else %}
+                <div class="w-1.5 h-1.5 rounded-full bg-dark-500"></div>
+                {% endif %}
+              </div>
+              <p class="text-sm {% if profile.bio %}text-white{% else %}text-gray-500{% endif %}">Bio / description</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 {% if profile.hourly_rate %}bg-green-500/20{% else %}bg-dark-700{% endif %}">
+                {% if profile.hourly_rate %}
+                <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                {% else %}
+                <div class="w-1.5 h-1.5 rounded-full bg-dark-500"></div>
+                {% endif %}
+              </div>
+              <p class="text-sm {% if profile.hourly_rate %}text-white{% else %}text-gray-500{% endif %}">Hourly rate set</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 {% if skills %}bg-green-500/20{% else %}bg-dark-700{% endif %}">
+                {% if skills %}
+                <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                {% else %}
+                <div class="w-1.5 h-1.5 rounded-full bg-dark-500"></div>
+                {% endif %}
+              </div>
+              <p class="text-sm {% if skills %}text-white{% else %}text-gray-500{% endif %}">Skills added</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 {% if profile.github_url %}bg-green-500/20{% else %}bg-dark-700{% endif %}">
+                {% if profile.github_url %}
+                <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                {% else %}
+                <div class="w-1.5 h-1.5 rounded-full bg-dark-500"></div>
+                {% endif %}
+              </div>
+              <p class="text-sm {% if profile.github_url %}text-white{% else %}text-gray-500{% endif %}">GitHub linked</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 {% if profile.portfolio_projects.exists %}bg-green-500/20{% else %}bg-dark-700{% endif %}">
+                {% if profile.portfolio_projects.exists %}
+                <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                {% else %}
+                <div class="w-1.5 h-1.5 rounded-full bg-dark-500"></div>
+                {% endif %}
+              </div>
+              <p class="text-sm {% if profile.portfolio_projects.exists %}text-white{% else %}text-gray-500{% endif %}">Portfolio project added</p>
+            </div>
+            {% endwith %}
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+  }
+</script>
+{% endblock %}

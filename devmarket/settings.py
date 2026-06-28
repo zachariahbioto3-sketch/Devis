@@ -20,6 +20,8 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     'cloudinary',
     'cloudinary_storage',
     'clients',
@@ -115,3 +117,47 @@ MPESA_ENV = 'sandbox'
 
 STRIPE_PUBLIC_KEY = env('STRIPE_PUBLIC_KEY')
 STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY')
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# ── CSRF trusted origins ──────────────────────────────────────────────────────
+CSRF_TRUSTED_ORIGINS = [
+    "https://localhost:8000",
+    "https://*.githubpreview.dev",
+    "https://*.preview.app.github.dev",
+    "https://*.app.github.dev",
+]
