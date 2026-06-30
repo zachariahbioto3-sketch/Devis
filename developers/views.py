@@ -221,16 +221,64 @@ def my_products(request):
 
 @login_required
 def upload_product(request):
-    return render(request, "developers/upload_product.html")
+    from store.forms import SoftwareProductForm
+    from django.utils.text import slugify
+    import uuid as uuid_lib
+
+    dev_profile = get_or_create_profile(request.user)
+
+    if request.method == "POST":
+        form = SoftwareProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.developer = dev_profile
+            base_slug = slugify(product.title)
+            slug = base_slug
+            counter = 1
+            from store.models import SoftwareProduct
+            while SoftwareProduct.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            product.slug = slug
+            product.save()
+            return redirect("dev_products")
+        else:
+            for field, errs in form.errors.items():
+                for e in errs:
+                    messages.error(request, e)
+    else:
+        form = SoftwareProductForm()
+
+    return render(request, "developers/upload_product.html", {"form": form})
 
 
 @login_required
 def edit_product(request, pk):
-    return render(request, "developers/edit_product.html")
+    from store.forms import SoftwareProductForm
+    from store.models import SoftwareProduct
+    dev_profile = get_or_create_profile(request.user)
+    product = get_object_or_404(SoftwareProduct, pk=pk, developer=dev_profile)
+
+    if request.method == "POST":
+        form = SoftwareProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Product updated.")
+            return redirect("dev_products")
+    else:
+        form = SoftwareProductForm(instance=product)
+
+    return render(request, "developers/edit_product.html", {"form": form, "product": product})
 
 
 @login_required
 def delete_product(request, pk):
+    from store.models import SoftwareProduct
+    dev_profile = get_or_create_profile(request.user)
+    product = get_object_or_404(SoftwareProduct, pk=pk, developer=dev_profile)
+    if request.method == "POST":
+        product.delete()
+        messages.success(request, "Product removed from marketplace.")
     return redirect("dev_products")
 
 

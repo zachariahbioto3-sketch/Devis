@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Sell a Product — DevMarket Kenya{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-12">
+
+  <a href="{% url "dev_products" %}" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-8">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to my products
+  </a>
+
+  <div class="mb-8">
+    <p class="text-xs font-semibold text-brand-400 uppercase tracking-widest mb-2">New product</p>
+    <h1 class="text-2xl font-bold text-white">List a software product</h1>
+    <p class="text-gray-400 text-sm mt-1">Sell ready-made software directly to clients. You earn 85% of every sale.</p>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+
+    <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 space-y-4">
+      <h2 class="text-sm font-bold text-white uppercase tracking-wider">Product details</h2>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Title <span class="text-red-400">*</span></label>
+        {{ form.title }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Short description <span class="text-red-400">*</span></label>
+        {{ form.short_description }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Full description <span class="text-red-400">*</span></label>
+        {{ form.description }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Category <span class="text-red-400">*</span></label>
+        {{ form.category }}
+      </div>
+    </div>
+
+    <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 space-y-4">
+      <h2 class="text-sm font-bold text-white uppercase tracking-wider">Pricing &amp; tech</h2>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Price (KES) <span class="text-red-400">*</span></label>
+        {{ form.price }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Tech stack</label>
+        {{ form.tech_stack }}
+      </div>
+    </div>
+
+    <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 space-y-4">
+      <h2 class="text-sm font-bold text-white uppercase tracking-wider">Links &amp; media</h2>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Thumbnail image</label>
+        {{ form.thumbnail }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Live demo URL</label>
+        {{ form.demo_url }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5">Repository URL <span class="text-gray-600">(shown only after purchase)</span></label>
+        {{ form.repo_url }}
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <a href="{% url "dev_products" %}" class="text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
+      <button type="submit" class="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-lg text-sm font-bold transition-colors">
+        List product &rarr;
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -36,6 +36,11 @@ class SoftwareProduct(models.Model):
     def __str__(self):
         return self.title
 
+    def get_tech_list(self):
+        if not self.tech_stack:
+            return []
+        return [t.strip() for t in self.tech_stack.split(",") if t.strip()][:5]
+
 
 class ProductPurchase(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
