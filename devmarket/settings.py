@@ -7,7 +7,9 @@ environ.Env.read_env(BASE_DIR / '.env')
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1']) + ['reimagined-barnacle-qv7q7ww9966r34gww-8000.app.github.dev']
+ALLOWED_HOSTS = list(dict.fromkeys(
+    env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1']) + ['testserver', 'reimagined-barnacle-qv7q7ww9966r34gww-8000.app.github.dev']
+))
 
 INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
