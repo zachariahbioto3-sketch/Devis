@@ -2,10 +2,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Sum, Q
+from django.db import models
 from projects.models import Project, Bid
 from projects.forms import ProjectForm
 from contracts.models import Contract, Milestone
 from clients.models import ClientProfile
+from developers.models import DeveloperProfile, DeveloperSkill, Skill
+from django.db.models import Avg, Count
 
 
 def get_or_create_profile(user):
@@ -189,3 +192,38 @@ def payments(request):
 @login_required
 def leave_review(request, contract_pk):
     return render(request, "clients/leave_review.html")
+
+
+def browse_developers(request):
+    developers = DeveloperProfile.objects.select_related("user").prefetch_related("developerskill_set__skill")
+
+    search   = request.GET.get("q", "")
+    skill    = request.GET.get("skill", "")
+    availability = request.GET.get("availability", "")
+
+    if search:
+        developers = developers.filter(
+            models.Q(user__first_name__icontains=search) |
+            models.Q(user__last_name__icontains=search) |
+            models.Q(bio__icontains=search) |
+            models.Q(tagline__icontains=search) |
+            models.Q(skills__name__icontains=search)
+        ).distinct()
+
+    if skill:
+        developers = developers.filter(skills__name__iexact=skill).distinct()
+
+    if availability:
+        developers = developers.filter(availability=availability)
+
+    all_skills = Skill.objects.all().order_by("name")
+    total = developers.count()
+
+    return render(request, "clients/browse_developers.html", {
+        "developers":  developers,
+        "all_skills":  all_skills,
+        "search":      search,
+        "skill":       skill,
+        "availability": availability,
+        "total":       total,
+    })
