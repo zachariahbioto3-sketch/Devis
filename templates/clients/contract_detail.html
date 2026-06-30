@@ -90,7 +90,12 @@
           </div>
         </div>
 
-        {% if milestone.status == "submitted" %}
+        {% if milestone.status == "approved" %}
+            <a href="{% url "pay_milestone" milestone.pk %}"
+              class="text-xs font-bold bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg transition-colors">
+              Pay KES {{ milestone.amount|floatformat:0 }}
+            </a>
+            {% elif milestone.status == "submitted" %}
         <div class="mt-4 pt-4 border-t border-dark-600 flex items-center gap-3">
           {% if milestone.deliverables.exists %}
           <div class="flex-1">
