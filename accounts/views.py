@@ -61,7 +61,7 @@ def register_view(request):
         user.save()
 
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-        messages.success(request, f"Welcome to DevMarket, {user.username}!")
+        messages.success(request, f"Welcome to Nenogram, {user.username}!")
         return redirect("dashboard")
 
     return render(request, "accounts/register.html")

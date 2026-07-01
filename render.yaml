@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: devmarket-kenya
+    name: nenogram-technologies
     env: python
     buildCommand: './build.sh'
     startCommand: 'gunicorn devmarket.wsgi:application'
@@ -32,4 +32,4 @@ services:
       - key: STRIPE_SECRET_KEY
         sync: false
     databases:
-      - name: devmarket-db
+      - name: nenogram-db

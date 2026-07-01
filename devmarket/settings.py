@@ -164,3 +164,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.preview.app.github.dev",
     "https://*.app.github.dev",
 ]
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
