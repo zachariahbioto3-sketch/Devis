@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Sum, Count
-from developers.models import DeveloperProfile, DeveloperSkill
+from django.db.models import Sum
+from developers.models import DeveloperProfile, DeveloperSkill, Skill, Certification, PortfolioProject
+from developers.forms import DeveloperProfileForm, PortfolioProjectForm, CertificationForm
 from projects.models import Bid
 from contracts.models import Contract, Milestone, Deliverable
 
@@ -113,7 +114,7 @@ def submit_deliverable(request, pk):
             )
             milestone.status = "submitted"
             milestone.save()
-            messages.success(request, f'{milestone.title}" submitted for client review.')
+            messages.success(request, f'"{milestone.title}" submitted for client review.')
             return redirect("dev_contract_detail", pk=milestone.contract.pk)
 
     return render(request, "developers/submit_deliverable.html", {
@@ -155,7 +156,24 @@ def earnings(request):
 @login_required
 def profile(request):
     dev_profile = get_or_create_profile(request.user)
-    return render(request, "developers/profile.html", {"dev_profile": dev_profile})
+
+    if request.method == "POST":
+        form = DeveloperProfileForm(request.POST, request.FILES, instance=dev_profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated.")
+            return redirect("dev_profile")
+        else:
+            for field, errs in form.errors.items():
+                for e in errs:
+                    messages.error(request, e)
+    else:
+        form = DeveloperProfileForm(instance=dev_profile)
+
+    return render(request, "developers/profile.html", {
+        "dev_profile": dev_profile,
+        "form": form,
+    })
 
 
 @login_required
@@ -170,45 +188,197 @@ def portfolio(request):
 
 @login_required
 def add_portfolio_project(request):
-    return render(request, "developers/add_portfolio.html")
+    dev_profile = get_or_create_profile(request.user)
+
+    if request.method == "POST":
+        form = PortfolioProjectForm(request.POST, request.FILES)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.developer = dev_profile
+            project.save()
+            messages.success(request, "Portfolio project added.")
+            return redirect("dev_portfolio")
+        else:
+            for field, errs in form.errors.items():
+                for e in errs:
+                    messages.error(request, e)
+    else:
+        form = PortfolioProjectForm()
+
+    return render(request, "developers/add_portfolio.html", {"form": form})
 
 
 @login_required
 def delete_portfolio_project(request, pk):
+    dev_profile = get_or_create_profile(request.user)
+    project = get_object_or_404(PortfolioProject, pk=pk, developer=dev_profile)
+    if request.method == "POST":
+        project.delete()
+        messages.success(request, "Project removed.")
     return redirect("dev_portfolio")
 
 
 @login_required
 def manage_skills(request):
     dev_profile = get_or_create_profile(request.user)
-    from developers.models import Skill
-    all_skills = Skill.objects.all()
-    dev_skills = DeveloperSkill.objects.filter(developer=dev_profile).select_related("skill")
+    all_skills  = Skill.objects.all().order_by("name")
+    dev_skills  = DeveloperSkill.objects.filter(developer=dev_profile).select_related("skill")
+
+    # skills already added by this developer
+    added_skill_ids = dev_skills.values_list("skill_id", flat=True)
+    available_skills = all_skills.exclude(pk__in=added_skill_ids)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "add":
+            skill_id = request.POST.get("skill_id")
+            level    = request.POST.get("level", "intermediate")
+            skill    = get_object_or_404(Skill, pk=skill_id)
+            DeveloperSkill.objects.get_or_create(
+                developer=dev_profile, skill=skill,
+                defaults={"level": level}
+            )
+            messages.success(request, f"{skill.name} added.")
+        elif action == "remove":
+            ds_id = request.POST.get("ds_id")
+            DeveloperSkill.objects.filter(pk=ds_id, developer=dev_profile).delete()
+            messages.success(request, "Skill removed.")
+        return redirect("dev_skills")
+
     return render(request, "developers/skills.html", {
-        "dev_profile": dev_profile,
-        "all_skills":  all_skills,
-        "dev_skills":  dev_skills,
+        "dev_profile":     dev_profile,
+        "all_skills":      all_skills,
+        "available_skills": available_skills,
+        "dev_skills":      dev_skills,
     })
 
 
 @login_required
 def manage_certifications(request):
-    return render(request, "developers/certifications.html")
+    dev_profile = get_or_create_profile(request.user)
+    certs = dev_profile.certifications.all().order_by("-issued_date")
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "add":
+            form = CertificationForm(request.POST)
+            if form.is_valid():
+                cert = form.save(commit=False)
+                cert.developer = dev_profile
+                cert.save()
+                messages.success(request, "Certification added.")
+                return redirect("dev_certifications")
+            else:
+                for field, errs in form.errors.items():
+                    for e in errs:
+                        messages.error(request, e)
+        elif action == "delete":
+            cert_pk = request.POST.get("cert_pk")
+            Certification.objects.filter(pk=cert_pk, developer=dev_profile).delete()
+            messages.success(request, "Certification removed.")
+            return redirect("dev_certifications")
+        form_obj = CertificationForm(request.POST)
+    else:
+        form_obj = CertificationForm()
+
+    return render(request, "developers/certifications.html", {
+        "dev_profile": dev_profile,
+        "certs":       certs,
+        "form":        form_obj,
+    })
 
 
 @login_required
 def metrics(request):
-    return render(request, "developers/metrics.html")
+    profile = get_or_create_profile(request.user)
+
+    all_bids = Bid.objects.filter(developer=profile)
+    total_bids   = all_bids.count()
+    accepted     = all_bids.filter(status="accepted").count()
+    win_rate     = round((accepted / total_bids * 100) if total_bids else 0, 1)
+
+    total_earned = Milestone.objects.filter(
+        contract__bid__developer=profile, status="paid"
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    completed_contracts = Contract.objects.filter(
+        bid__developer=profile, status="completed"
+    ).count()
+
+    return render(request, "developers/metrics.html", {
+        "profile":             profile,
+        "total_bids":          total_bids,
+        "accepted_bids":       accepted,
+        "win_rate":            win_rate,
+        "total_earned":        total_earned,
+        "completed_contracts": completed_contracts,
+    })
 
 
 @login_required
 def subscription(request):
+    from developers.models import Subscription
+    import os
     dev_profile = get_or_create_profile(request.user)
+
     try:
         sub = dev_profile.subscription
     except Exception:
         sub = None
-    return render(request, "developers/subscription.html", {"subscription": sub})
+
+    if request.method == "POST":
+        phone = request.POST.get("phone", "").strip() or request.user.phone
+        plan  = request.POST.get("plan", "pro")
+
+        if not phone:
+            messages.error(request, "Please enter your M-Pesa phone number.")
+            return render(request, "developers/subscription.html", {"subscription": sub})
+
+        from payments.mpesa import stk_push
+        amount = 999
+
+        codespace_name = os.environ.get("CODESPACE_NAME", "")
+        callback_url = (
+            f"https://{codespace_name}-8000.app.github.dev/payments/mpesa/callback/"
+            if codespace_name
+            else request.build_absolute_uri("/payments/mpesa/callback/")
+        )
+
+        try:
+            result = stk_push(
+                phone=phone,
+                amount=amount,
+                reference="DEVIS-SUB",
+                description="Pro subscription",
+                callback_url=callback_url,
+            )
+            if result.get("ResponseCode") == "0":
+                import datetime
+                if sub:
+                    sub.plan   = "pro"
+                    sub.status = "active"
+                    sub.end_date = datetime.date.today() + datetime.timedelta(days=30)
+                    sub.amount_paid = amount
+                    sub.save()
+                else:
+                    Subscription.objects.create(
+                        developer=dev_profile,
+                        plan="pro",
+                        status="active",
+                        end_date=datetime.date.today() + datetime.timedelta(days=30),
+                        amount_paid=amount,
+                    )
+                messages.success(request, "M-Pesa prompt sent. Enter your PIN to activate Pro plan.")
+                return redirect("dev_subscription")
+            else:
+                messages.error(request, f"M-Pesa error: {result.get('errorMessage', 'Unknown error')}")
+        except Exception as e:
+            messages.error(request, f"Could not reach M-Pesa. ({e})")
+
+    return render(request, "developers/subscription.html", {
+        "subscription": sub,
+        "phone": request.user.phone,
+    })
 
 
 @login_required
@@ -223,7 +393,7 @@ def my_products(request):
 def upload_product(request):
     from store.forms import SoftwareProductForm
     from django.utils.text import slugify
-    import uuid as uuid_lib
+    from store.models import SoftwareProduct
 
     dev_profile = get_or_create_profile(request.user)
 
@@ -235,12 +405,12 @@ def upload_product(request):
             base_slug = slugify(product.title)
             slug = base_slug
             counter = 1
-            from store.models import SoftwareProduct
             while SoftwareProduct.objects.filter(slug=slug).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             product.slug = slug
             product.save()
+            messages.success(request, "Product listed on the marketplace.")
             return redirect("dev_products")
         else:
             for field, errs in form.errors.items():

@@ -11,9 +11,10 @@
     Back to inbox
   </a>
 
-  <div class="flex items-center gap-3 mb-6 pb-6 border-b border-dark-600">
-    <div class="w-11 h-11 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center">
-      <span class="text-brand-400 font-bold">{{ other_user.username|slice:":1"|upper }}</span>
+  <!-- Header Section -->
+  <div class="flex items-center gap-3 mb-6 pb-6 border-b border-dark-700">
+    <div class="w-11 h-11 rounded-full bg-dark-700 border border-gray-600 flex items-center justify-center">
+      <span class="text-white font-bold">{{ other_user.username|slice:":1"|upper }}</span>
     </div>
     <div>
       <p class="font-bold text-white">{{ other_user.get_full_name|default:other_user.username }}</p>
@@ -21,26 +22,28 @@
     </div>
   </div>
 
+  <!-- Messages List -->
   <div class="space-y-4 mb-6 max-h-[50vh] overflow-y-auto pr-2">
     {% for msg in messages_list %}
     <div class="flex {% if msg.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
-      <div class="max-w-[75%] {% if msg.sender == request.user %}bg-brand-500 text-white{% else %}bg-dark-700 text-gray-200{% endif %} rounded-2xl px-4 py-2.5">
+      <!-- Sent = White/Black contrast, Received = Dark Gray -->
+      <div class="max-w-[75%] {% if msg.sender == request.user %}bg-white text-black{% else %}bg-dark-700 text-gray-200{% endif %} rounded-2xl px-4 py-2.5">
         <p class="text-sm leading-relaxed">{{ msg.body }}</p>
-        <p class="text-xs mt-1 {% if msg.sender == request.user %}text-white/60{% else %}text-gray-500{% endif %}">
+        <p class="text-xs mt-1 {% if msg.sender == request.user %}text-gray-600{% else %}text-gray-500{% endif %}">
           {{ msg.created_at|date:"H:i" }}
         </p>
       </div>
     </div>
-    {% empty %}
     {% endfor %}
   </div>
 
+  <!-- Input Form -->
   <form method="POST" class="flex items-center gap-3">
     {% csrf_token %}
     <input type="text" name="body" placeholder="Type a message..." autocomplete="off"
-      class="flex-1 bg-dark-800 border border-dark-600 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-colors">
+      class="flex-1 bg-dark-800 border border-dark-700 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors">
     <button type="submit"
-      class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-3 rounded-lg text-sm font-bold transition-colors">
+      class="bg-white hover:bg-gray-200 text-black px-5 py-3 rounded-lg text-sm font-bold transition-colors">
       Send
     </button>
   </form>

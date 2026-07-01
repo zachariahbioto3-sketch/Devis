@@ -12,19 +12,19 @@
                 extend: {
                     colors: {
                         brand: {
-                            50:  "#fffdf7",
-                            100: "#fff9e8",
-                            400: "#fcdb8b",
-                            500: "#FBD784", /* MNTN Accent Yellow */
-                            600: "#e5c070",
-                            700: "#ccab63",
+                            50:  "#f9fafb",
+                            100: "#f3f4f6",
+                            400: "#e5e7eb",
+                            500: "#ffffff", /* Main Accent: Pure White */
+                            600: "#d1d5db",
+                            700: "#9ca3af",
                         },
                         dark: {
-                            900: "#0B1D26", /* MNTN Main Dark Background */
-                            800: "#112b38",
-                            700: "#1a3b4c",
-                            600: "#244d62",
-                            500: "#30617a",
+                            900: "#000000", /* Main Background: Pure Black */
+                            800: "#111111", /* Slightly lighter black */
+                            700: "#1a1a1a",
+                            600: "#262626",
+                            500: "#404040",
                         }
                     },
                     fontFamily: {
@@ -36,12 +36,11 @@
             }
         }
     </script>
-    <!-- Added Playfair Display to match the elegant serif headings of the image -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: "Inter", sans-serif;
-            background-color: #0B1D26;
+            background-color: #000000;
             color: #ffffff;
         }
 
@@ -50,12 +49,12 @@
             font-family: "Playfair Display", serif;
         }
 
-        /* Yellow Accent Line Component */
+        /* White Accent Line Component */
         .accent-label {
             display: inline-flex;
             align-items: center;
             gap: 1.5rem;
-            color: #FBD784;
+            color: #ffffff;
             text-transform: uppercase;
             letter-spacing: 0.2em;
             font-size: 0.875rem;
@@ -66,7 +65,7 @@
             display: block;
             width: 72px;
             height: 2px;
-            background-color: #FBD784;
+            background-color: #ffffff;
         }
 
         /* Large Background Numbers (01, 02, etc.) */
@@ -93,53 +92,50 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            color: #FBD784;
+            color: #ffffff;
             font-weight: 600;
             transition: gap 0.2s ease;
         }
         .read-more:hover {
             gap: 0.75rem;
+            color: #cccccc;
         }
 
-        /* Custom Dark Theme Scrollbar */
+        /* Custom Monochrome Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0B1D26; }
-        ::-webkit-scrollbar-thumb { background: #1a3b4c; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: #000000; }
+        ::-webkit-scrollbar-thumb { background: #404040; border-radius: 3px; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-dark-900 text-gray-100 min-h-screen flex flex-col relative overflow-x-hidden">
 
-<!-- Navigation: Made absolute and transparent to overlay perfectly like the template -->
 <nav class="absolute w-full top-0 z-50 pt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 relative">
             
-            <!-- Logo Section -->
             <a href="{% url 'home' %}" class="flex items-center gap-2 z-20">
                 <span class="font-bold text-2xl tracking-wider text-title">DevMarket<span class="text-brand-500 text-sm font-sans ml-1">.ke</span></span>
             </a>
 
-            <!-- Centered Links -->
             <div class="hidden md:flex items-center justify-center absolute inset-0 pointer-events-none">
                 <div class="flex items-center gap-10 text-sm font-medium text-white pointer-events-auto">
-                    <a href="{% url 'browse_projects' %}" class="hover:text-brand-500 transition-colors">Projects</a>
-                    <a href="/developers/" class="hover:text-brand-500 transition-colors">Developers</a>
-                    <a href="{% url 'marketplace' %}" class="hover:text-brand-500 transition-colors">Store</a>
-                    <a href="{% url 'pricing' %}" class="hover:text-brand-500 transition-colors">Pricing</a>
+                    <a href="{% url 'browse_projects' %}" class="hover:text-gray-400 transition-colors">Projects</a>
+                    <a href="/developers/" class="hover:text-gray-400 transition-colors">Developers</a>
+                    <a href="{% url 'marketplace' %}" class="hover:text-gray-400 transition-colors">Store</a>
+                    <a href="{% url 'pricing' %}" class="hover:text-gray-400 transition-colors">Pricing</a>
                 </div>
             </div>
 
-            <!-- Right Side / Account Area -->
             <div class="flex items-center gap-6 z-20">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'dashboard' %}" class="text-sm font-medium text-white hover:text-brand-500 transition-colors flex items-center gap-2">
+                    <a href="{% url 'dashboard' %}" class="text-sm font-medium text-white hover:text-gray-400 transition-colors flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         Dashboard
                     </a>
-                    <a href="{% url 'logout' %}" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Logout</a>
+                    <a href="{% url 'logout' %}" class="text-sm font-medium text-gray-500 hover:text-white transition-colors">Logout</a>
                 {% else %}
-                    <a href="{% url 'login' %}" class="text-sm font-medium text-white hover:text-brand-500 transition-colors flex items-center gap-2">
+                    <a href="{% url 'login' %}" class="text-sm font-medium text-white hover:text-gray-400 transition-colors flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         Account
                     </a>
@@ -149,33 +145,30 @@
     </div>
 </nav>
 
-<!-- Social Sidebar (Matches the left side of the image) -->
 <div class="hidden lg:flex fixed left-8 top-1/2 -translate-y-1/2 flex-col items-center gap-6 z-40">
-    <span class="text-sm font-bold tracking-widest [writing-mode:vertical-rl] rotate-180 mb-4">Follow us</span>
-    <a href="#" class="hover:text-brand-500 transition-colors">
+    <span class="text-sm font-bold tracking-widest [writing-mode:vertical-rl] rotate-180 mb-4 text-white">Follow us</span>
+    <a href="#" class="text-gray-500 hover:text-white transition-colors">
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.708-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
     </a>
-    <a href="#" class="hover:text-brand-500 transition-colors">
+    <a href="#" class="text-gray-500 hover:text-white transition-colors">
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
     </a>
 </div>
 
-<!-- Progress/Nav Sidebar (Matches the right side of the image) -->
 <div class="hidden lg:flex fixed right-8 top-1/2 -translate-y-1/2 flex-col items-center gap-5 z-40 text-sm font-bold">
     <a href="#" class="text-white">Start</a>
-    <a href="#" class="text-gray-500 hover:text-white transition-colors">01</a>
-    <a href="#" class="text-gray-500 hover:text-white transition-colors">02</a>
-    <a href="#" class="text-gray-500 hover:text-white transition-colors">03</a>
+    <a href="#" class="text-gray-600 hover:text-white transition-colors">01</a>
+    <a href="#" class="text-gray-600 hover:text-white transition-colors">02</a>
+    <a href="#" class="text-gray-600 hover:text-white transition-colors">03</a>
 </div>
 
 {% if messages %}
-<!-- Adjusted margins so messages don't overlap the new absolute header -->
 <div class="max-w-7xl mx-auto px-4 pt-32 relative z-40 w-full">
     {% for message in messages %}
     <div class="mb-2 px-4 py-3 rounded text-sm font-medium
-        {% if message.tags == 'error' %}bg-red-500/10 border border-red-500/30 text-red-400
-        {% elif message.tags == 'success' %}bg-green-500/10 border border-green-500/30 text-green-400
-        {% else %}bg-blue-500/10 border border-blue-500/30 text-brand-400{% endif %}">
+        {% if message.tags == 'error' %}bg-gray-800 border border-gray-600 text-white
+        {% elif message.tags == 'success' %}bg-gray-800 border border-gray-600 text-white
+        {% else %}bg-gray-800 border border-gray-600 text-white{% endif %}">
         {{ message }}
     </div>
     {% endfor %}
@@ -185,74 +178,61 @@
 <main class="flex-grow">
     {% block content %}
     
-    <!-- 
-      EXAMPLE CONTENT LAYOUT:
-      This is to demonstrate how to use the classes to achieve the layout in the image 
-      while using Software/Developer themed content. You can overwrite this in your child templates!
-    -->
     <div class="relative min-h-[85vh] flex flex-col justify-center items-center text-center px-4 pt-24 pb-12">
         <div class="relative z-10 max-w-4xl mx-auto mt-12">
-            <!-- Center Aligned Accent Label -->
-            <span class="accent-label mb-8 mx-auto justify-center before:hidden after:content-[''] after:block after:w-[72px] after:h-[2px] after:bg-brand-500 before:mr-0 after:ml-6 flex-row">A Software Guide</span>
+            <span class="accent-label mb-8 mx-auto justify-center before:hidden after:content-[''] after:block after:w-[72px] after:h-[2px] after:bg-white before:mr-0 after:ml-6 flex-row">A Software Guide</span>
             
-            <h1 class="text-5xl md:text-7xl text-title leading-tight mb-8 font-normal">
+            <h1 class="text-5xl md:text-7xl text-title leading-tight mb-8 font-normal text-white">
                 Be Prepared For The <br> Future Of Software!
             </h1>
             
-            <p class="text-sm font-bold tracking-widest uppercase mt-20 flex flex-col items-center gap-4 cursor-pointer hover:text-brand-500 transition-colors">
+            <p class="text-sm font-bold tracking-widest uppercase mt-20 flex flex-col items-center gap-4 cursor-pointer text-white hover:text-gray-400 transition-colors">
                 scroll down
                 <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
             </p>
         </div>
     </div>
 
-    <!-- Main Content Blocks -->
     <div class="max-w-7xl mx-auto px-4 sm:px-12 lg:px-24 py-24 space-y-40">
         
-        <!-- Section 01 -->
         <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-32">
             <div class="flex-1 relative w-full">
-                <!-- Large Background Number -->
                 <span class="bg-number">01</span>
                 
                 <div class="content-wrapper">
                     <span class="accent-label mb-6">Get Started</span>
-                    <h2 class="text-4xl md:text-5xl text-title mb-6 leading-tight">What level of developer are you?</h2>
-                    <p class="text-gray-300 font-medium leading-relaxed mb-8">
+                    <h2 class="text-4xl md:text-5xl text-title mb-6 leading-tight text-white">What level of developer are you?</h2>
+                    <p class="text-gray-400 font-medium leading-relaxed mb-8">
                         Determining what level of developer you are can be an important tool when planning future software architectures. This guide will help you understand the core stack requirements based on ratings set by communities like GitHub and StackOverflow.
                     </p>
                     <a href="#" class="read-more">read more <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg></a>
                 </div>
             </div>
             <div class="flex-1 w-full">
-                <!-- Placeholder for Image matching the portrait orientation -->
-                <div class="aspect-[3/4] bg-dark-700 w-full lg:w-4/5 ml-auto object-cover overflow-hidden relative group border border-dark-600/50 shadow-2xl">
-                    <div class="absolute inset-0 bg-brand-500/10 group-hover:bg-transparent transition-colors z-10 duration-500"></div>
-                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Code" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                <div class="aspect-[3/4] bg-dark-800 w-full lg:w-4/5 ml-auto object-cover overflow-hidden relative group border border-dark-700 shadow-2xl">
+                    <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10 duration-500"></div>
+                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Code" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105">
                 </div>
             </div>
         </div>
         
-        <!-- Section 02 -->
         <div class="flex flex-col lg:flex-row-reverse items-center gap-16 lg:gap-32">
             <div class="flex-1 relative w-full lg:pr-8">
-                <!-- Large Background Number positioned right -->
                 <span class="bg-number" style="left: auto; right: 100%; transform: translateX(60%);">02</span>
                 
                 <div class="content-wrapper">
                     <span class="accent-label mb-6">Dev Essentials</span>
-                    <h2 class="text-4xl md:text-5xl text-title mb-6 leading-tight">Picking the right Tech Stack!</h2>
-                    <p class="text-gray-300 font-medium leading-relaxed mb-8">
+                    <h2 class="text-4xl md:text-5xl text-title mb-6 leading-tight text-white">Picking the right Tech Stack!</h2>
+                    <p class="text-gray-400 font-medium leading-relaxed mb-8">
                         The nice thing about building software products is that you don't really need a server farm right away. Let's start with local environments. A typical mistake beginners make is overloading their local setup with heavy dependencies, which will slow things down.
                     </p>
                     <a href="#" class="read-more">read more <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg></a>
                 </div>
             </div>
             <div class="flex-1 w-full">
-                <!-- Placeholder for Image matching the portrait orientation -->
-                <div class="aspect-[3/4] bg-dark-700 w-full lg:w-4/5 mr-auto object-cover overflow-hidden relative group border border-dark-600/50 shadow-2xl">
-                    <div class="absolute inset-0 bg-brand-500/10 group-hover:bg-transparent transition-colors z-10 duration-500"></div>
-                    <img src="https://images.unsplash.com/photo-1607799279861-4dddf8473d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Developer Setup" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                <div class="aspect-[3/4] bg-dark-800 w-full lg:w-4/5 mr-auto object-cover overflow-hidden relative group border border-dark-700 shadow-2xl">
+                    <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10 duration-500"></div>
+                    <img src="https://images.unsplash.com/photo-1607799279861-4dddf8473d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Developer Setup" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105">
                 </div>
             </div>
         </div>
@@ -261,33 +241,29 @@
     {% endblock %}
 </main>
 
-<!-- Footer: Re-arranged to match the 2-column link layout of the image -->
 <footer class="py-20 mt-20 relative z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col lg:flex-row justify-between gap-16">
             
-            <!-- Left Branding & Copy -->
             <div class="flex flex-col justify-between max-w-sm lg:w-2/5">
                 <div>
-                    <a href="/" class="text-3xl font-bold uppercase tracking-widest text-title inline-block mb-4">DevMarket</a>
-                    <p class="text-sm font-medium text-gray-300 leading-relaxed mb-6 pr-4">
+                    <a href="/" class="text-3xl font-bold uppercase tracking-widest text-title inline-block mb-4 text-white">DevMarket</a>
+                    <p class="text-sm font-medium text-gray-400 leading-relaxed mb-6 pr-4">
                         Get out there & discover your next software product, developer & destination!
                     </p>
                 </div>
                 
                 <div class="mt-auto pt-16">
-                    <p class="text-sm text-gray-500 font-medium mb-2">&copy; 2025 DevMarket Kenya. All rights reserved. Terms & Privacy</p>
-                    <p class="text-sm text-gray-500 font-medium">Payments via <span class="text-green-500">M-Pesa</span> & <span class="text-brand-500">Stripe</span></p>
+                    <p class="text-sm text-gray-600 font-medium mb-2">&copy; 2025 DevMarket Kenya. All rights reserved. Terms & Privacy</p>
+                    <p class="text-sm text-gray-600 font-medium">Payments via <span class="text-white">M-Pesa</span> & <span class="text-white">Stripe</span></p>
                 </div>
             </div>
 
-            <!-- Right Links (2 Columns to match the Image exactly) -->
             <div class="flex flex-wrap sm:flex-nowrap gap-16 lg:gap-32 lg:w-1/2 lg:justify-end">
                 
-                <!-- Column 1 -->
                 <div class="min-w-[140px]">
-                    <p class="text-brand-500 font-bold text-lg mb-6 text-title tracking-wide">Platform</p>
-                    <div class="space-y-4 text-sm font-medium text-gray-300">
+                    <p class="text-white font-bold text-lg mb-6 text-title tracking-wide">Platform</p>
+                    <div class="space-y-4 text-sm font-medium text-gray-400">
                         <a href="{% url 'browse_projects' %}" class="block hover:text-white transition-colors">Browse projects</a>
                         <a href="/developers/" class="block hover:text-white transition-colors">Find developers</a>
                         <a href="{% url 'marketplace' %}" class="block hover:text-white transition-colors">Software store</a>
@@ -295,10 +271,9 @@
                     </div>
                 </div>
                 
-                <!-- Column 2 -->
                 <div class="min-w-[140px]">
-                    <p class="text-brand-500 font-bold text-lg mb-6 text-title tracking-wide">Company</p>
-                    <div class="space-y-4 text-sm font-medium text-gray-300">
+                    <p class="text-white font-bold text-lg mb-6 text-title tracking-wide">Company</p>
+                    <div class="space-y-4 text-sm font-medium text-gray-400">
                         <a href="#" class="block hover:text-white transition-colors">About</a>
                         <a href="#" class="block hover:text-white transition-colors">Blog</a>
                         <a href="#" class="block hover:text-white transition-colors">Write for us</a>

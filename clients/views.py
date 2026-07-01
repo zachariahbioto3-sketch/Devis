@@ -91,9 +91,17 @@ def my_projects(request):
     ).order_by("-created_at")
     if status:
         projects = projects.filter(status=status)
+    status_tabs = [
+        ("",            "All"),
+        ("open",        "Open"),
+        ("in_progress", "In progress"),
+        ("completed",   "Completed"),
+        ("cancelled",   "Cancelled"),
+    ]
     return render(request, "clients/projects.html", {
-        "projects": projects,
-        "status":   status,
+        "projects":    projects,
+        "status":      status,
+        "status_tabs": status_tabs,
     })
 
 

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Earnings — DevMarket Kenya{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+  <div class="mb-8">
+    <p class="text-xs font-semibold text-brand-400 uppercase tracking-widest mb-2">Finance</p>
+    <h1 class="text-2xl font-bold text-white">Earnings</h1>
+  </div>
+
+  <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 mb-8">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-6">
+      <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Total earned</p>
+        <p class="text-3xl font-bold text-white">KES {{ total|floatformat:0 }}</p>
+      </div>
+      <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Paid milestones</p>
+        <p class="text-3xl font-bold text-green-400">{{ paid_milestones.count }}</p>
+      </div>
+      <div>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Platform fee (10%)</p>
+        <p class="text-3xl font-bold text-gray-500">KES {% widthratio total 10 1 %}</p>
+      </div>
+    </div>
+  </div>
+
+  {% if paid_milestones %}
+  <div class="bg-dark-800 border border-dark-600 rounded-xl divide-y divide-dark-600 overflow-hidden">
+    {% for milestone in paid_milestones %}
+    <div class="flex items-center justify-between px-5 py-4">
+      <div>
+        <p class="text-sm font-semibold text-white">{{ milestone.title }}</p>
+        <p class="text-xs text-gray-500">{{ milestone.contract.project.title }}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-brand-400 font-bold">KES {{ milestone.amount|floatformat:0 }}</p>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">Paid</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-dark-800 border border-dashed border-dark-600 rounded-xl py-16 text-center">
+    <p class="text-gray-400 font-medium">No earnings yet.</p>
+    <p class="text-gray-600 text-sm mt-1">Earnings appear here once a client releases milestone payment.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
